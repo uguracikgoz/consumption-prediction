@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pod-prediction-config
+  labels:
+    app: pod-prediction
+data:
+  PORT: "8000"
+  HOST: "0.0.0.0"
+  REDIS_ENABLED: "true"
+  REDIS_HOST: "pod-prediction-redis"
+  REDIS_PORT: "6379"
+  GOOGLE_WORKSHEET_NAME: "2024"
+  PREDICTION_DAYS_AHEAD: "14"
+  CACHE_TTL: "604800"

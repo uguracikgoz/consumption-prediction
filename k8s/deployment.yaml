@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-prediction-api
+  labels:
+    app: pod-prediction
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pod-prediction
+  template:
+    metadata:
+      labels:
+        app: pod-prediction
+    spec:
+      volumes:
+      - name: google-creds
+        secret:
+          secretName: pod-prediction-google-creds
+      containers:
+      - name: api
+        image: pod-prediction:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        env:
+        - name: GOOGLE_CREDENTIALS_FILE
+          value: "/app/google-creds.json"
+        envFrom:
+        - configMapRef:
+            name: pod-prediction-config
+        - secretRef:
+            name: pod-prediction-secret
+        volumeMounts:
+        - name: google-creds
+          mountPath: "/app/google-creds.json"
+          subPath: "google-creds.json"
+          readOnly: true
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 15

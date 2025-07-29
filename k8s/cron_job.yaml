@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pod-prediction-updater
+  labels:
+    app: pod-prediction
+spec:
+  schedule: "0 1 * * *"  # Run daily at 1:00 AM
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: pod-prediction-cron
+        spec:
+          volumes:
+          - name: google-creds
+            secret:
+              secretName: pod-prediction-google-creds
+          containers:
+          - name: prediction-updater
+            image: pod-prediction:latest
+            command: ["python", "src/cron/update_predictions.py"]
+            env:
+            - name: GOOGLE_CREDENTIALS_FILE
+              value: "/app/google-creds.json"
+            envFrom:
+            - configMapRef:
+                name: pod-prediction-config
+            - secretRef:
+                name: pod-prediction-secret
+            volumeMounts:
+            - name: google-creds
+              mountPath: "/app/google-creds.json"
+              subPath: "google-creds.json"
+              readOnly: true
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "100m"
+              limits:
+                memory: "512Mi"
+                cpu: "500m"
+          restartPolicy: OnFailure
